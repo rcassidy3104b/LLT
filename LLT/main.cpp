@@ -93,6 +93,7 @@ int main()
 	          << " b=" << llt.getB()
 	          << " elip=" << llt.isElip()
 	          << " station=" << llt.getStation() << '\n';
+	cout << llt.to_str() << endl;
 
 	return 0;
 }

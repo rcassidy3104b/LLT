@@ -1,5 +1,8 @@
 #pragma once
+#define _USE_MATH_DEFINES 
+#include <cmath>
 #include <vector>
+#include <string>
 
 using namespace std;
 
@@ -15,7 +18,14 @@ private:
 	vector<float> a0;
 	vector<float> alfa0;
 	vector<float> twist;
-	vector<float> theta_l;
+	
+	vector<float> theta_n;
+	vector<float> y_t;
+	vector<float> c_t;
+	vector<float> a0_t;
+	vector<float> alfa0_t;
+	vector<float> twist_t;
+
 	vector<vector<float>> Ic;
 public:
 	// default constructor
@@ -53,5 +63,6 @@ public:
 	void setA0(const vector<float>& value);
 	void setAlfa0(const vector<float>& value);
 	void setTwist(const vector<float>& value);
-};
 
+	std::string to_str() const;
+};
