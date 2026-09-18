@@ -1,0 +1,57 @@
+#pragma once
+#include <vector>
+
+using namespace std;
+
+class LLT
+{
+private:
+	int N;
+	float b;
+	bool elip;
+	int station;
+	vector<float> y;
+	vector<float> c;
+	vector<float> a0;
+	vector<float> alfa0;
+	vector<float> twist;
+	vector<float> theta_l;
+	vector<vector<float>> Ic;
+public:
+	// default constructor
+	LLT();
+
+	// parameterized constructor (signature)
+	LLT(int N, float b, bool elip, int station,
+		const vector<float>& y,
+		const vector<float>& c,
+		const vector<float>& a0,
+		const vector<float>& alfa0,
+		const vector<float>& twist);
+
+	// existing method
+	void run();
+
+	// getters
+	int getN() const;
+	float getB() const;
+	bool isElip() const;
+	int getStation() const;
+	const vector<float>& getY() const;
+	const vector<float>& getC() const;
+	const vector<float>& getA0() const;
+	const vector<float>& getAlfa0() const;
+	const vector<float>& getTwist() const;
+
+	// setters
+	void setN(int value);
+	void setB(float value);
+	void setElip(bool value);
+	void setStation(int value);
+	void setY(const vector<float>& value);
+	void setC(const vector<float>& value);
+	void setA0(const vector<float>& value);
+	void setAlfa0(const vector<float>& value);
+	void setTwist(const vector<float>& value);
+};
+
