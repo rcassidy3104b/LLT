@@ -72,9 +72,38 @@ LLT::LLT(int N, float b, bool elip, int station,
 	invertIc();
 }
 
-vector<float> LLT::results()
+// Compute A = Ic_inv * (alphaIn + twist_t - alfa0_t)
+vector<float> LLT::results(float alphaIn)
 {
-	//[IC] {A} = {alphas} + {t(theta_n)} = {alpha_0L(theta_n)} -> {A} = [IC]^-1 * [alpha + t - alpha_0L]
+	// ensure sizes are valid
+	if (static_cast<int>(twist_t.size()) != N || static_cast<int>(alfa0_t.size()) != N) {
+		return vector<float>(); // invalid state
+	}
+
+	// ensure inverse is present (attempt to compute if not)
+	if (Ic_inv.empty()) {
+		if (!invertIc()) return vector<float>(); // singular or invalid
+	}
+
+	if (static_cast<int>(Ic_inv.size()) != N) return vector<float>();
+
+	// build RHS: rhs[i] = alphaIn + twist_t[i] - alfa0_t[i]
+	vector<float> rhs(N, 0.0f);
+	for (int i = 0; i < N; ++i) {
+		rhs[i] = alphaIn + twist_t[i] - alfa0_t[i];
+	}
+
+	// multiply A = Ic_inv * rhs
+	vector<float> A(N, 0.0f);
+	for (int i = 0; i < N; ++i) {
+		float sum = 0.0f;
+		for (int j = 0; j < N; ++j) {
+			sum += Ic_inv[i][j] * rhs[j];
+		}
+		A[i] = sum;
+	}
+
+	return A;
 }
 
 bool LLT::invertIc()

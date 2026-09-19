@@ -41,8 +41,8 @@ public:
 		const vector<float>& alfa0,
 		const vector<float>& twist);
 
-	// existing method
-	vector<float> results();
+	// results now accepts a float alphaIn and returns vector A
+	vector<float> results(float alphaIn);
 
 	// new: compute and store inverse of Ic
 	// returns true on success, false on failure (e.g. singular matrix)
