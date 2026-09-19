@@ -66,59 +66,120 @@ LLT::LLT(int N, float b, bool elip, int station,
 		}
 		Ic.push_back(row);
 	}
+
+	// compute and store inverse of Ic right after population
+	// if inversion fails (singular), Ic_inv will remain empty
+	invertIc();
 }
 
-void LLT::run()
+vector<float> LLT::results()
 {
-	//
-	// N is number of stations
-	// M is number of fourier terms
-	// N=M!
-	
-	//[IC](l,m) = ((4*b*sin(m*theta_l))/ alpha_0L(theta_l)*chord(theta_l)) + (m*sin(m*theta_l)/sin(theta_l)
 	//[IC] {A} = {alphas} + {t(theta_n)} = {alpha_0L(theta_n)} -> {A} = [IC]^-1 * [alpha + t - alpha_0L]
+}
+
+bool LLT::invertIc()
+{
+	// clear previous inverse
+	Ic_inv.clear();
+
+	// Basic checks
+	if (Ic.size() != static_cast<size_t>(N)) return false;
+	for (const auto& row : Ic) {
+		if (row.size() != static_cast<size_t>(N)) return false;
+	}
+
+	if (N == 0) return false;
+
+	// Create augmented matrix [Ic | I]
+	vector<vector<float>> aug(N, vector<float>(2 * N, 0.0f));
+	for (int i = 0; i < N; ++i) {
+		for (int j = 0; j < N; ++j) {
+			aug[i][j] = Ic[i][j];
+		}
+		aug[i][N + i] = 1.0f;
+	}
+
+	const float EPS = 1e-8f;
+
+	// Gauss-Jordan with partial pivoting
+	for (int col = 0; col < N; ++col) {
+		// find pivot
+		int pivot = col;
+		float maxVal = fabs(aug[col][col]);
+		for (int r = col + 1; r < N; ++r) {
+			float val = fabs(aug[r][col]);
+			if (val > maxVal) {
+				maxVal = val;
+				pivot = r;
+			}
+		}
+		if (maxVal < EPS) {
+			// singular matrix
+			Ic_inv.clear();
+			return false;
+		}
+		// swap if needed
+		if (pivot != col) {
+			std::swap(aug[pivot], aug[col]);
+		}
+		// normalize pivot row
+		float pivVal = aug[col][col];
+		for (int j = 0; j < 2 * N; ++j) {
+			aug[col][j] /= pivVal;
+		}
+		// eliminate other rows
+		for (int r = 0; r < N; ++r) {
+			if (r == col) continue;
+			float factor = aug[r][col];
+			if (fabs(factor) < EPS) continue;
+			for (int j = 0; j < 2 * N; ++j) {
+				aug[r][j] -= factor * aug[col][j];
+			}
+		}
+	}
+
+	// extract inverse from augmented matrix
+	Ic_inv.assign(N, vector<float>(N, 0.0f));
+	for (int i = 0; i < N; ++i) {
+		for (int j = 0; j < N; ++j) {
+			Ic_inv[i][j] = aug[i][N + j];
+		}
+	}
+	return true;
 }
 
 int LLT::getN() const
 {
 	return N;
 }
-
 float LLT::getB() const
 {
 	return b;
 }
-
 bool LLT::isElip() const
 {
 	return elip;
 }
-
 int LLT::getStation() const
 {
 	return station;
 }
-
 const vector<float>& LLT::getY() const
 {
 	return y;
 }
-
 const vector<float>& LLT::getC() const
 {
 	return c;
 }
-
 const vector<float>& LLT::getA0() const
 {
 	return a0;
 }
-
 const vector<float>& LLT::getAlfa0() const
 {
 	return alfa0;
 }
-
 const vector<float>& LLT::getTwist() const
 {
 	return twist;
@@ -128,42 +189,34 @@ void LLT::setN(int value)
 {
 	N = value;
 }
-
 void LLT::setB(float value)
 {
 	b = value;
 }
-
 void LLT::setElip(bool value)
 {
 	elip = value;
 }
-
 void LLT::setStation(int value)
 {
 	station = value;
 }
-
 void LLT::setY(const vector<float>& value)
 {
 	y = value;
 }
-
 void LLT::setC(const vector<float>& value)
 {
 	c = value;
 }
-
 void LLT::setA0(const vector<float>& value)
 {
 	a0 = value;
 }
-
 void LLT::setAlfa0(const vector<float>& value)
 {
 	alfa0 = value;
 }
-
 void LLT::setTwist(const vector<float>& value)
 {
 	twist = value;
@@ -211,6 +264,23 @@ std::string LLT::to_str() const
         oss << "]";
     }
     oss << "]\n";
+
+    // print Ic_inv if present
+    if (!Ic_inv.empty()) {
+        oss << "Ic_inv: [";
+        for (size_t i = 0; i < Ic_inv.size(); ++i) {
+            if (i) oss << ", ";
+            oss << "[";
+            for (size_t j = 0; j < Ic_inv[i].size(); ++j) {
+                if (j) oss << ", ";
+                oss << Ic_inv[i][j];
+            }
+            oss << "]";
+        }
+        oss << "]\n";
+    } else {
+        oss << "Ic_inv: []\n";
+    }
 
     return oss.str();
 }

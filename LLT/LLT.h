@@ -27,6 +27,7 @@ private:
 	vector<float> twist_t;
 
 	vector<vector<float>> Ic;
+	vector<vector<float>> Ic_inv; // new member to hold the inverse of Ic
 public:
 	// default constructor
 	LLT();
@@ -40,7 +41,11 @@ public:
 		const vector<float>& twist);
 
 	// existing method
-	void run();
+	vector<float> results();
+
+	// new: compute and store inverse of Ic
+	// returns true on success, false on failure (e.g. singular matrix)
+	bool invertIc();
 
 	// getters
 	int getN() const;
@@ -52,6 +57,9 @@ public:
 	const vector<float>& getA0() const;
 	const vector<float>& getAlfa0() const;
 	const vector<float>& getTwist() const;
+
+	// optional accessor to the inverted matrix
+	const vector<vector<float>>& getIcInverse() const { return Ic_inv; }
 
 	// setters
 	void setN(int value);
