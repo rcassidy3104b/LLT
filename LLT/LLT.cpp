@@ -1,38 +1,155 @@
 #include "LLT.h"
 #include <sstream>
 #include <iomanip>
+#include <fstream>
+#include <algorithm>
 
+namespace {
+	// small helpers copied/adapted from previous main.cpp
+	static std::string trim(const std::string& s)
+	{
+		std::size_t a = s.find_first_not_of(" \t\r\n");
+		if (a == std::string::npos) return {};
+		std::size_t b = s.find_last_not_of(" \t\r\n");
+		return s.substr(a, b - a + 1);
+	}
+
+	static std::string firstField(const std::string& line)
+	{
+		std::istringstream ss(line);
+		std::string tok;
+		if (!std::getline(ss, tok, ',')) return {};
+		return trim(tok);
+	}
+}
+
+// Default ctor
 LLT::LLT()
 	: N(0), b(0.0f), elip(false), station(0),
 	  y(), c(), a0(), alfa0(), twist(),
 	  theta_n(), y_t(), c_t(), a0_t(), alfa0_t(), twist_t(),
 	  Ic(), Ic_inv(), aRatio(0.0f)
 {
+	// nothing to compute
 }
 
-LLT::LLT(int N, float b, bool elip, int station,
-		 const vector<float>& y,
-		 const vector<float>& c,
-		 const vector<float>& a0,
-		 const vector<float>& alfa0,
-		 const vector<float>& twist)
-	: N(N), b(b), elip(elip), station(station),
-	  y(y), c(c), a0(a0), alfa0(alfa0), twist(twist),
+// Parameterized ctor — set members and centralise all computation in computeAll()
+LLT::LLT(int N_, float b_, bool elip_, int station_,
+		 const vector<float>& y_,
+		 const vector<float>& c_,
+		 const vector<float>& a0_,
+		 const vector<float>& alfa0_,
+		 const vector<float>& twist_)
+	: N(N_), b(b_), elip(elip_), station(station_),
+	  y(y_), c(c_), a0(a0_), alfa0(alfa0_), twist(twist_),
 	  theta_n(), y_t(), c_t(), a0_t(), alfa0_t(), twist_t(),
 	  Ic(), Ic_inv(), aRatio(0.0f)
 {
-	for (int i = 0;i < N;i++) {
+	computeAll();
+}
+
+// File-parsing constructor: moves main.cpp parsing logic here
+LLT::LLT(const std::string& filename)
+	: N(0), b(0.0f), elip(false), station(0),
+	  y(), c(), a0(), alfa0(), twist(),
+	  theta_n(), y_t(), c_t(), a0_t(), alfa0_t(), twist_t(),
+	  Ic(), Ic_inv(), aRatio(0.0f)
+{
+	std::ifstream inFile(filename);
+	if (!inFile) {
+		// leave default values; user can check getN/getB etc
+		return;
+	}
+
+	std::string line;
+
+	// Read header values: b, N, elip, station (each on its own row, first column)
+	if (std::getline(inFile, line)) {
+		try { b = std::stof(firstField(line)); } catch (...) { b = 0.0f; }
+	}
+	if (std::getline(inFile, line)) {
+		try { N = std::stoi(firstField(line)); } catch (...) { N = 0; }
+	}
+	if (std::getline(inFile, line)) {
+		try { elip = (std::stoi(firstField(line)) != 0); } catch (...) { elip = false; }
+	}
+	if (std::getline(inFile, line)) {
+		try { station = std::stoi(firstField(line)); } catch (...) { station = 0; }
+	}
+
+	// reserve station vectors
+	y.clear(); c.clear(); a0.clear(); alfa0.clear(); twist.clear();
+	y.reserve(std::max(0, station));
+	c.reserve(std::max(0, station));
+	a0.reserve(std::max(0, station));
+	alfa0.reserve(std::max(0, station));
+	twist.reserve(std::max(0, station));
+
+	// Read station rows (each row has: y,c,a0,alfa0,twist)
+	for (int i = 0; i < station; ++i) {
+		if (!std::getline(inFile, line)) {
+			// If rows missing, fill remaining with zeros
+			y.push_back(0.0f);
+			c.push_back(0.0f);
+			a0.push_back(0.0f);
+			alfa0.push_back(0.0f);
+			twist.push_back(0.0f);
+			continue;
+		}
+
+		std::istringstream ss(line);
+
+		auto parseTok = [&ss]() -> float {
+			std::string t;
+			if (!std::getline(ss, t, ',')) return 0.0f;
+			t = trim(t);
+			if (t.empty()) return 0.0f;
+			try { return std::stof(t); } catch (...) { return 0.0f; }
+		};
+
+		y.push_back(parseTok());
+		c.push_back(parseTok());
+		a0.push_back(parseTok());
+		alfa0.push_back(parseTok());
+		twist.push_back(parseTok());
+	}
+
+	// now perform calculations
+	computeAll();
+}
+
+// centralised computation moved here from the old parameterized constructor
+void LLT::computeAll()
+{
+	// clear previous computed containers
+	theta_n.clear();
+	y_t.clear();
+	c_t.clear();
+	a0_t.clear();
+	alfa0_t.clear();
+	twist_t.clear();
+	Ic.clear();
+	Ic_inv.clear();
+	aRatio = 0.0f;
+
+	// basic checks
+	if (N <= 0 || b == 0.0f) return;
+
+	// compute theta_n and y_t
+	theta_n.reserve(N);
+	y_t.reserve(N);
+	for (int i = 0; i < N; ++i) {
 		theta_n.push_back(((i + 1) * M_PI) / (N + 1));
 		y_t.push_back(-cos(theta_n[i]) * b / 2);
 	}
 
 	// interpolate c, a0, alfa0, twist onto the y_t stations
-	c_t.resize(N);
-	a0_t.resize(N);
-	alfa0_t.resize(N);
-	twist_t.resize(N);
+	c_t.assign(N, 0.0f);
+	a0_t.assign(N, 0.0f);
+	alfa0_t.assign(N, 0.0f);
+	twist_t.assign(N, 0.0f);
 
-	// if no input station data, leave interpolated vectors as zeros
+	// if no input station data, leave interpolated vectors as zeros and do not build Ic
 	if (y.empty()) return;
 
 	// helper lambda for linear interpolation given input arrays
@@ -65,10 +182,9 @@ LLT::LLT(int N, float b, bool elip, int station,
 	}
 
 	// compute wing area S from provided y and c (trapezoidal rule).
-	// If y is non-negative (starts at 0), assume it's half-span and mirror (multiply by 2).
 	float S = 0.0f;
-	if (y.size() >= 2) {
-		for (size_t i = 0; i + 1 < y.size(); ++i) {
+	if (y.size() >= 2 && c.size() >= 2) {
+		for (size_t i = 0; i + 1 < y.size() && i + 1 < c.size(); ++i) {
 			float dx = y[i + 1] - y[i];
 			S += 0.5f * (c[i] + c[i + 1]) * dx;
 		}
@@ -76,7 +192,7 @@ LLT::LLT(int N, float b, bool elip, int station,
 		if (y.front() >= 0.0f) {
 			S *= 2.0f;
 		}
-	} else if (y.size() == 1) {
+	} else if (y.size() == 1 && c.size() == 1) {
 		// single station: approximate area as rectangular wing
 		S = c[0] * b;
 	} else {
@@ -90,16 +206,20 @@ LLT::LLT(int N, float b, bool elip, int station,
 		aRatio = 0.0f;
 	}
 
-	for (int l = 0;l < N;l++) {
+	// build Ic matrix
+	Ic.reserve(N);
+	for (int l = 0; l < N; ++l) {
 		vector<float> row;
-		for(int m = 0;m<N;m++){
-			row.push_back(((4 * b * sin(m * theta_n[l])) / (alfa0_t[l] * c_t[l])) + (m * sin(m * theta_n[l]) / sin(theta_n[l])));
+		row.reserve(N);
+		for (int m = 0; m < N; ++m) {
+			// same formula as before
+			float val = ((4 * b * sin(m * theta_n[l])) / (alfa0_t[l] * c_t[l])) + (m * sin(m * theta_n[l]) / sin(theta_n[l]));
+			row.push_back(val);
 		}
-		Ic.push_back(row);
+		Ic.push_back(std::move(row));
 	}
 
-	// compute and store inverse of Ic right after population
-	// if inversion fails (singular), Ic_inv will remain empty
+	// compute inverse
 	invertIc();
 }
 

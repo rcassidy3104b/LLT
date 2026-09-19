@@ -32,6 +32,10 @@ private:
 
 	// new member: aRatio = b*b / S  (S = wing area computed from y and c)
 	float aRatio;
+
+	// centralised computation invoked by constructors and setters
+	void computeAll();
+
 public:
 	// default constructor
 	LLT();
@@ -43,6 +47,9 @@ public:
 		const vector<float>& a0,
 		const vector<float>& alfa0,
 		const vector<float>& twist);
+
+	// constructor that parses an input CSV similar to previous main logic
+	LLT(const std::string& filename);
 
 	// results now accepts a float alphaIn and returns vector A
 	vector<float> results(float alphaIn);
@@ -68,16 +75,16 @@ public:
 	// optional accessor to the inverted matrix (already inline)
 	const vector<vector<float>>& getIcInverse() const { return Ic_inv; }
 
-	// setters (inline)
-	void setN(int value) { N = value; }
-	void setB(float value) { b = value; }
-	void setElip(bool value) { elip = value; }
-	void setStation(int value) { station = value; }
-	void setY(const vector<float>& value) { y = value; }
-	void setC(const vector<float>& value) { c = value; }
-	void setA0(const vector<float>& value) { a0 = value; }
-	void setAlfa0(const vector<float>& value) { alfa0 = value; }
-	void setTwist(const vector<float>& value) { twist = value; }
+	// setters (inline) — retrigger calculations after change
+	void setN(int value) { N = value; computeAll(); }
+	void setB(float value) { b = value; computeAll(); }
+	void setElip(bool value) { elip = value; computeAll(); }
+	void setStation(int value) { station = value; computeAll(); }
+	void setY(const vector<float>& value) { y = value; computeAll(); }
+	void setC(const vector<float>& value) { c = value; computeAll(); }
+	void setA0(const vector<float>& value) { a0 = value; computeAll(); }
+	void setAlfa0(const vector<float>& value) { alfa0 = value; computeAll(); }
+	void setTwist(const vector<float>& value) { twist = value; computeAll(); }
 
 	std::string to_str() const;
 };
