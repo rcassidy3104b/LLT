@@ -29,6 +29,9 @@ private:
 	vector<vector<float>> Ic;
 	// new member to hold the inverse of Ic
 	vector<vector<float>> Ic_inv;
+
+	// new member: aRatio = b*b / S  (S = wing area computed from y and c)
+	float aRatio;
 public:
 	// default constructor
 	LLT();
@@ -58,6 +61,9 @@ public:
 	const vector<float>& getA0() const { return a0; }
 	const vector<float>& getAlfa0() const { return alfa0; }
 	const vector<float>& getTwist() const { return twist; }
+
+	// accessor to aRatio
+	float getARatio() const { return aRatio; }
 
 	// optional accessor to the inverted matrix (already inline)
 	const vector<vector<float>>& getIcInverse() const { return Ic_inv; }

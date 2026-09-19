@@ -4,7 +4,9 @@
 
 LLT::LLT()
 	: N(0), b(0.0f), elip(false), station(0),
-	  y(), c(), a0(), alfa0(), twist()
+	  y(), c(), a0(), alfa0(), twist(),
+	  theta_n(), y_t(), c_t(), a0_t(), alfa0_t(), twist_t(),
+	  Ic(), Ic_inv(), aRatio(0.0f)
 {
 }
 
@@ -15,7 +17,9 @@ LLT::LLT(int N, float b, bool elip, int station,
 		 const vector<float>& alfa0,
 		 const vector<float>& twist)
 	: N(N), b(b), elip(elip), station(station),
-	  y(y), c(c), a0(a0), alfa0(alfa0), twist(twist)
+	  y(y), c(c), a0(a0), alfa0(alfa0), twist(twist),
+	  theta_n(), y_t(), c_t(), a0_t(), alfa0_t(), twist_t(),
+	  Ic(), Ic_inv(), aRatio(0.0f)
 {
 	for (int i = 0;i < N;i++) {
 		theta_n.push_back(((i + 1) * M_PI) / (N + 1));
@@ -59,6 +63,33 @@ LLT::LLT(int N, float b, bool elip, int station,
 		alfa0_t[i] = interp(alfa0, i);
 		twist_t[i] = interp(twist, i);
 	}
+
+	// compute wing area S from provided y and c (trapezoidal rule).
+	// If y is non-negative (starts at 0), assume it's half-span and mirror (multiply by 2).
+	float S = 0.0f;
+	if (y.size() >= 2) {
+		for (size_t i = 0; i + 1 < y.size(); ++i) {
+			float dx = y[i + 1] - y[i];
+			S += 0.5f * (c[i] + c[i + 1]) * dx;
+		}
+		// if y starts at 0 (no negative values), assume input is half-span
+		if (y.front() >= 0.0f) {
+			S *= 2.0f;
+		}
+	} else if (y.size() == 1) {
+		// single station: approximate area as rectangular wing
+		S = c[0] * b;
+	} else {
+		S = 0.0f;
+	}
+
+	const float EPS = 1e-8f;
+	if (S > EPS) {
+		aRatio = (b * b) / S;
+	} else {
+		aRatio = 0.0f;
+	}
+
 	for (int l = 0;l < N;l++) {
 		vector<float> row;
 		for(int m = 0;m<N;m++){
@@ -185,6 +216,7 @@ std::string LLT::to_str() const
     oss << "b: " << b << "\n";
     oss << "elip: " << (elip ? "true" : "false") << "\n";
     oss << "station: " << station << "\n";
+    oss << "aRatio: " << aRatio << "\n";
 
     auto appendVec = [&](const std::string& name, const std::vector<float>& v) {
         oss << name << ": [";
