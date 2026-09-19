@@ -27,7 +27,8 @@ private:
 	vector<float> twist_t;
 
 	vector<vector<float>> Ic;
-	vector<vector<float>> Ic_inv; // new member to hold the inverse of Ic
+	// new member to hold the inverse of Ic
+	vector<vector<float>> Ic_inv;
 public:
 	// default constructor
 	LLT();
@@ -47,30 +48,30 @@ public:
 	// returns true on success, false on failure (e.g. singular matrix)
 	bool invertIc();
 
-	// getters
-	int getN() const;
-	float getB() const;
-	bool isElip() const;
-	int getStation() const;
-	const vector<float>& getY() const;
-	const vector<float>& getC() const;
-	const vector<float>& getA0() const;
-	const vector<float>& getAlfa0() const;
-	const vector<float>& getTwist() const;
+	// getters (inline)
+	int getN() const { return N; }
+	float getB() const { return b; }
+	bool isElip() const { return elip; }
+	int getStation() const { return station; }
+	const vector<float>& getY() const { return y; }
+	const vector<float>& getC() const { return c; }
+	const vector<float>& getA0() const { return a0; }
+	const vector<float>& getAlfa0() const { return alfa0; }
+	const vector<float>& getTwist() const { return twist; }
 
-	// optional accessor to the inverted matrix
+	// optional accessor to the inverted matrix (already inline)
 	const vector<vector<float>>& getIcInverse() const { return Ic_inv; }
 
-	// setters
-	void setN(int value);
-	void setB(float value);
-	void setElip(bool value);
-	void setStation(int value);
-	void setY(const vector<float>& value);
-	void setC(const vector<float>& value);
-	void setA0(const vector<float>& value);
-	void setAlfa0(const vector<float>& value);
-	void setTwist(const vector<float>& value);
+	// setters (inline)
+	void setN(int value) { N = value; }
+	void setB(float value) { b = value; }
+	void setElip(bool value) { elip = value; }
+	void setStation(int value) { station = value; }
+	void setY(const vector<float>& value) { y = value; }
+	void setC(const vector<float>& value) { c = value; }
+	void setA0(const vector<float>& value) { a0 = value; }
+	void setAlfa0(const vector<float>& value) { alfa0 = value; }
+	void setTwist(const vector<float>& value) { twist = value; }
 
 	std::string to_str() const;
 };
