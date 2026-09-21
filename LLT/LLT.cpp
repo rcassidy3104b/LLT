@@ -76,7 +76,11 @@ LLT::LLT(const std::string& filename)
 	if (std::getline(inFile, line)) {
 		try { station = std::stoi(firstField(line)); } catch (...) { station = 0; }
 	}
-
+	if (elip == 1) {
+		if (std::getline(inFile, line)) {
+			try { aRatio = std::stoi(firstField(line)); } catch (...) { aRatio = 0.0f; }
+		}
+	}
 	// reserve station vectors
 	y.clear(); c.clear(); a0.clear(); alfa0.clear(); twist.clear();
 	y.reserve(std::max(0, station));
@@ -130,8 +134,9 @@ void LLT::computeAll()
 	twist_t.clear();
 	Ic.clear();
 	Ic_inv.clear();
-	aRatio = 0.0f;
-
+	if (!elip) {
+		aRatio = 0.0f;
+	}
 	// basic checks
 	if (N <= 0 || b == 0.0f) return;
 
