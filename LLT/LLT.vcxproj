@@ -131,7 +131,9 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="In.csv" />
+    <None Include="ElipWing.csv" />
+    <None Include="GenWing.csv" />
+    <None Include="GenWingKey.csv" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="LLT.h" />

@@ -23,7 +23,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="In.csv" />
+    <None Include="GenWingKey.csv" />
+    <None Include="ElipWing.csv" />
+    <None Include="GenWing.csv" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="LLT.h">

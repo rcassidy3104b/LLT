@@ -28,7 +28,7 @@ LLT::LLT()
 	: N(0), b(0.0f), elip(false), station(0),
 	  y(), c(), a0(), alfa0(), twist(),
 	  theta_n(), y_t(), c_t(), a0_t(), alfa0_t(), twist_t(),
-	  Ic(), Ic_inv(), aRatio(0.0f)
+	  Ic(), Ic_inv(), aRatio(0.0f), S(0.0f)
 {
 	// nothing to compute
 }
@@ -43,7 +43,7 @@ LLT::LLT(int N_, float b_, bool elip_, int station_,
 	: N(N_), b(b_), elip(elip_), station(station_),
 	  y(y_), c(c_), a0(a0_), alfa0(alfa0_), twist(twist_),
 	  theta_n(), y_t(), c_t(), a0_t(), alfa0_t(), twist_t(),
-	  Ic(), Ic_inv(), aRatio(0.0f)
+	  Ic(), Ic_inv(), aRatio(0.0f), S(0.0f)
 {
 	computeAll();
 }
@@ -53,7 +53,7 @@ LLT::LLT(const std::string& filename)
 	: N(0), b(0.0f), elip(false), station(0),
 	  y(), c(), a0(), alfa0(), twist(),
 	  theta_n(), y_t(), c_t(), a0_t(), alfa0_t(), twist_t(),
-	  Ic(), Ic_inv(), aRatio(0.0f)
+	  Ic(), Ic_inv(), aRatio(0.0f),S(0.0f)
 {
 	std::ifstream inFile(filename);
 	if (!inFile) {
@@ -204,7 +204,7 @@ void LLT::computeAll()
 			c_t[i] = interp(c, i);
 		}
 		else {
-			c_t[i] = b * b * sqrt(1 - std::cos(theta_n[i])) / (aRatio * 2);
+			c_t[i] = b * b * sqrt(1 - std::cos(theta_n[i])) / (aRatio * 2);//have y_t, can use distribution eqn instead of this garbage
 		}
 		a0_t[i] = interp(a0, i);
 		alfa0_t[i] = interp(alfa0, i);
