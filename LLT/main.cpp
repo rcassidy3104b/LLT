@@ -25,7 +25,7 @@ int main()
 
 	std::cout << llt.to_str() << std::endl;
 	llt.to_file("out.csv");
-	vector<float> res = llt.coefs(1.0);
+	vector<float> res = llt.coefs(10.0);
 	for (float i : res) {
 		std::cout << to_string(i) << std::endl;
 	}

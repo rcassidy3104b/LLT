@@ -246,12 +246,12 @@ void LLT::computeAll()
 	}
 	// build Ic matrix
 	Ic.reserve(N);
-	for (int l = 0; l < N; ++l) {
+	for (int l = 0; l < N; l++) {
 		vector<float> row;
 		row.reserve(N);
-		for (int m = 1; m < N+1; ++m) {
+		for (int m = 1; m < N+1; m++) {
 			// same formula as before
-			float val = ((4 * b * sin(m * theta_n[l])) / (alfa0_t[l] * c_t[l])) + (m * sin(m * theta_n[l]) / sin(theta_n[l]));
+			float val = ((4 * b * sin(m * theta_n[l])) / (a0_t[l] * c_t[l])) + (m * sin(m * theta_n[l]) / sin(theta_n[l]));
 			row.push_back(val);
 		}
 		Ic.push_back(std::move(row));
@@ -518,6 +518,6 @@ bool LLT::to_file(const std::string& filename) const
 		}
 		ofs << "\n";
 	}
-
+	
 	return true;
 }
