@@ -1,5 +1,5 @@
 #pragma once
-#define _USE_MATH_DEFINES 
+#define _USE_MATH_DEFINES
 #include <cmath>
 #include <vector>
 #include <string>
@@ -13,6 +13,7 @@ private:
 	float b;
 	bool elip;
 	int station;
+	float S;
 	vector<float> y;
 	vector<float> c;
 	vector<float> a0;
@@ -53,6 +54,7 @@ public:
 
 	// results now accepts a float alphaIn and returns vector A
 	vector<float> results(float alphaIn);
+	vector<float> coefs(float alphaIn);
 
 	// new: compute and store inverse of Ic
 	// returns true on success, false on failure (e.g. singular matrix)
@@ -87,4 +89,7 @@ public:
 	void setTwist(const vector<float>& value) { twist = value; computeAll(); }
 
 	std::string to_str() const;
+
+	// write LLT data to CSV file; returns true on success
+	bool to_file(const std::string& filename) const;
 };

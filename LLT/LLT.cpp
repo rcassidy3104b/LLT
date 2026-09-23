@@ -22,7 +22,7 @@ namespace {
 		return trim(tok);
 	}
 }
-
+ 
 // Default ctor
 LLT::LLT()
 	: N(0), b(0.0f), elip(false), station(0),
@@ -103,25 +103,45 @@ LLT::LLT(const std::string& filename)
 
 		std::istringstream ss(line);
 
-		auto parseTok = [&ss]() -> float {
+		// read each CSV field as string (preserve empty fields)
+		auto getFieldStr = [&ss]() -> std::string {
 			std::string t;
-			if (!std::getline(ss, t, ',')) return 0.0f;
-			t = trim(t);
-			if (t.empty()) return 0.0f;
-			try { return std::stof(t); } catch (...) { return 0.0f; }
+			if (!std::getline(ss, t, ',')) return std::string();
+			return trim(t);
 		};
 
-		y.push_back(parseTok());
-		c.push_back(parseTok());
-		a0.push_back(parseTok());
-		alfa0.push_back(parseTok());
-		twist.push_back(parseTok());
+		// parse numeric fields; convert angle columns (a0, alfa0, twist) from degrees to radians
+		auto parseFloat = [](const std::string& s, bool degToRad = false) -> float {
+			if (s.empty()) return 0.0f;
+			try {
+				float v = std::stof(s);
+				if (degToRad) {
+					v = v * static_cast<float>(M_PI) / 180.0f;
+				}
+				return v;
+			} catch (...) {
+				return 0.0f;
+			}
+		};
+
+		std::string s_y     = getFieldStr();
+		std::string s_c     = getFieldStr();
+		std::string s_a0    = getFieldStr();
+		std::string s_alfa0 = getFieldStr();
+		std::string s_twist = getFieldStr();
+
+		y.push_back(parseFloat(s_y, false));
+		c.push_back(parseFloat(s_c, false));
+		// Convert a0, alfa0 and twist from degrees to radians before storing
+		a0.push_back(parseFloat(s_a0, false));
+		alfa0.push_back(parseFloat(s_alfa0, true));
+		twist.push_back(parseFloat(s_twist, true));
 	}
 
 	// now perform calculations
 	computeAll();
 }
-
+ 
 // centralised computation moved here from the old parameterized constructor
 void LLT::computeAll()
 {
@@ -169,25 +189,32 @@ void LLT::computeAll()
 		// find interval
 		for (size_t j = 0; j + 1 < y.size(); ++j) {
 			float y0 = y[j];
-			float y1 = y[j+1];
+			float y1 = y[j + 1];
 			if (yt >= y0 && yt <= y1) {
 				float t = (yt - y0) / (y1 - y0);
-				return src[j] + t * (src[j+1] - src[j]);
+				return src[j] + t * (src[j + 1] - src[j]);
 			}
 		}
 		// fallback	
 		return src.back();
-	};
+		};
 
 	for (int i = 0; i < N; ++i) {
-		c_t[i] = interp(c, i);
+		if (!elip) {
+			c_t[i] = interp(c, i);
+		}
+		else {
+			c_t[i] = b * b * sqrt(1 - std::cos(theta_n[i])) / (aRatio * 2);
+		}
 		a0_t[i] = interp(a0, i);
 		alfa0_t[i] = interp(alfa0, i);
 		twist_t[i] = interp(twist, i);
 	}
 
+
 	// compute wing area S from provided y and c (trapezoidal rule).
-	float S = 0.0f;
+	S = 0.0f;
+	if (!elip) {
 	if (y.size() >= 2 && c.size() >= 2) {
 		for (size_t i = 0; i + 1 < y.size() && i + 1 < c.size(); ++i) {
 			float dx = y[i + 1] - y[i];
@@ -197,26 +224,32 @@ void LLT::computeAll()
 		if (y.front() >= 0.0f) {
 			S *= 2.0f;
 		}
-	} else if (y.size() == 1 && c.size() == 1) {
+	}
+	else if (y.size() == 1 && c.size() == 1) {
 		// single station: approximate area as rectangular wing
 		S = c[0] * b;
-	} else {
+	}
+	else {
 		S = 0.0f;
 	}
 
-	const float EPS = 1e-8f;
-	if (S > EPS) {
-		aRatio = (b * b) / S;
-	} else {
-		aRatio = 0.0f;
+	const float EPS = 1e-8;
+		if (S > EPS) {
+			aRatio = (b * b) / S;
+		}
+		else {
+			aRatio = 0.0f;
+		}
 	}
-
+	else {
+		S = b * b / aRatio;
+	}
 	// build Ic matrix
 	Ic.reserve(N);
 	for (int l = 0; l < N; ++l) {
 		vector<float> row;
 		row.reserve(N);
-		for (int m = 0; m < N; ++m) {
+		for (int m = 1; m < N+1; ++m) {
 			// same formula as before
 			float val = ((4 * b * sin(m * theta_n[l])) / (alfa0_t[l] * c_t[l])) + (m * sin(m * theta_n[l]) / sin(theta_n[l]));
 			row.push_back(val);
@@ -231,6 +264,7 @@ void LLT::computeAll()
 // Compute A = Ic_inv * (alphaIn + twist_t - alfa0_t)
 vector<float> LLT::results(float alphaIn)
 {
+	alphaIn = alphaIn * static_cast<float>(M_PI) / 180.0f;
 	// ensure sizes are valid
 	if (static_cast<int>(twist_t.size()) != N || static_cast<int>(alfa0_t.size()) != N) {
 		return vector<float>(); // invalid state
@@ -260,6 +294,21 @@ vector<float> LLT::results(float alphaIn)
 	}
 
 	return A;
+}
+
+vector<float> LLT::coefs(float alphaIn)
+{ //gives CL, delta, CDi, CR
+	vector<float> A = results(alphaIn);
+	vector<float> res;
+	res.push_back(A[0] * M_PI * b * b / S);
+	float delta = 0.0f;
+	for (int i = 1; i < A.size(); i++) {
+		delta += ((i+1) * std::pow((A[i] / A[0]), 2));
+	}
+	res.push_back(delta);
+	res.push_back(res[0] * res[0] * (1 + res[1]) / (M_PI * aRatio));
+	res.push_back(A[1] * b * b * M_PI / (4 * S));
+	return res;
 }
 
 bool LLT::invertIc()
@@ -395,4 +444,80 @@ std::string LLT::to_str() const
     }
 
     return oss.str();
+}
+
+// Write CSV file representation of the object.
+// Format:
+//   N,<value>
+//   b,<value>
+//   elip,<0|1>
+//   station,<value>
+//   aRatio,<value>
+//   y,<v0>,<v1>,...
+//   c,<...>
+//   a0,<...>
+//   alfa0,<...>
+//   twist,<...>
+//   theta_n,<...>
+//   y_t,<...>
+//   c_t,<...>
+//   a0_t,<...>
+//   alfa0_t,<...>
+//   twist_t,<...>
+//   Ic,<row0_val0>,<row0_val1>,...
+//   Ic,<row1_val0>,<row1_val1>,...
+//   Ic_inv,<row0_val0>,...
+bool LLT::to_file(const std::string& filename) const
+{
+	std::ofstream ofs(filename);
+	if (!ofs) return false;
+
+	ofs << std::fixed << std::setprecision(6);
+
+	ofs << "N," << N << "\n";
+	ofs << "b," << b << "\n";
+	ofs << "elip," << (elip ? 1 : 0) << "\n";
+	ofs << "station," << station << "\n";
+	ofs << "aRatio," << aRatio << "\n";
+
+	auto writeVec = [&](const std::string& name, const std::vector<float>& v) {
+		ofs << name;
+		for (size_t i = 0; i < v.size(); ++i) {
+			ofs << "," << v[i];
+		}
+		ofs << "\n";
+	};
+
+	writeVec("y", y);
+	writeVec("c", c);
+	writeVec("a0", a0);
+	writeVec("alfa0", alfa0);
+	writeVec("twist", twist);
+
+	writeVec("theta_n", theta_n);
+	writeVec("y_t", y_t);
+	writeVec("c_t", c_t);
+	writeVec("a0_t", a0_t);
+	writeVec("alfa0_t", alfa0_t);
+	writeVec("twist_t", twist_t);
+
+	// For Ic print each row on its own line prefixed with "Ic"
+	for (size_t i = 0; i < Ic.size(); ++i) {
+		ofs << "Ic";
+		for (size_t j = 0; j < Ic[i].size(); ++j) {
+			ofs << "," << Ic[i][j];
+		}
+		ofs << "\n";
+	}
+
+	// For Ic_inv print each row on its own line prefixed with "Ic_inv"
+	for (size_t i = 0; i < Ic_inv.size(); ++i) {
+		ofs << "Ic_inv";
+		for (size_t j = 0; j < Ic_inv[i].size(); ++j) {
+			ofs << "," << Ic_inv[i][j];
+		}
+		ofs << "\n";
+	}
+
+	return true;
 }
