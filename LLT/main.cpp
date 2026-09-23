@@ -17,8 +17,13 @@ int main()
 	}
 
 	//LLT llt(filename);
-	LLT llt("GenWing.csv");
+	
+
+	//***************************************************
+	//          Test code for LLT class
+	//***************************************************
 	/*
+	LLT llt("GenWing.csv");
 	std::cout << "LLT object created: N=" << llt.getN()
 		<< " b=" << llt.getB()
 		<< " elip=" << llt.isElip()
@@ -38,7 +43,12 @@ int main()
 	std::cout << std::endl;
 	*/
 
-	/*vector<int> nTest = { 3,4,5,7,10,15,25,30,40,50,100,200 };
+	//***************************************************
+	//          Problem 4a
+	//***************************************************
+	/*
+	LLT llt("GenWing.csv");
+	vector<int> nTest = { 3,4,5,7,10,15,25,30,40,50,100,200 };
 	std::ofstream ofs("p4a.csv");
 	ofs.precision(10);
 	ofs << "N,CL,CDi" << std::endl;
@@ -47,7 +57,12 @@ int main()
 		ofs << i << "," << llt.results(1.0)[0] << "," << llt.results(1.0)[2] << std::endl;
 	}*/
 
-	/*vector<int> nTest = {3,4,5,7,10,15,25,30,40,50,100,200};
+	//***************************************************
+	//          Problem 4b part 1
+	//***************************************************
+	/*
+	LLT llt("GenWing.csv");
+	vector<int> nTest = {3,4,5,7,10,15,25,30,40,50,100,200};
 	std::ofstream ofs("p4b1.csv");
 	ofs.precision(10);
 	ofs << "N,A" << std::endl;
@@ -60,7 +75,13 @@ int main()
 		ofs << std::endl;
 	}
 	*/
-	/*vector<int> nTest = {3,4,5,7,10,15,25,30,40,50,100,200};
+
+	//***************************************************
+	//          Problem 4b part 2
+	//***************************************************
+	/*
+	LLT llt("GenWing.csv");
+	vector<int> nTest = {3,4,5,7,10,15,25,30,40,50,100,200};
 	std::ofstream ofs("p4b2.csv");
 	ofs.precision(10);
 	for (int i : nTest) {
@@ -78,6 +99,60 @@ int main()
 		ofs << std::endl;
 	}*/
 
+	//***************************************************
+	//          Problem 5a
+	//***************************************************
+	/*
+	LLT llt("ElipWing.csv");
+	vector<int> nTest = { 3,4,5,7,10,15,25,30,40,50,100,200 };
+	std::ofstream ofs("p5a.csv");
+	ofs.precision(10);
+	ofs << "N,CL,CDi" << std::endl;
+	for (int i : nTest) {
+		llt.setN(i);
+		ofs << i << "," << llt.results(5.0)[0] << "," << llt.results(5.0)[2] << std::endl;
+	}*/
+	
+	//***************************************************
+	//          Problem 5b part 1
+	//***************************************************
+	/*
+	LLT llt("ElipWing.csv");
+	vector<int> nTest = {3,4,5,7,10,15,25,30,40,50,100,200};
+	std::ofstream ofs("p5b1.csv");
+	ofs.precision(10);
+	ofs << "N,A" << std::endl;
+	for (int i : nTest) {
+		llt.setN(i);
+		ofs << i << ",";
+		for (float j : llt.results(1.0)) {
+			ofs << j << ",";
+		}
+		ofs << std::endl;
+	}
+	*/
+
+	//***************************************************
+	//          Problem 5b part 2
+	//***************************************************
+	/*LLT llt("ElipWing.csv");
+	vector<int> nTest = { 3,4,5,7,10,15,25,30,40,50,100,200 };
+	std::ofstream ofs("p5b2.csv");
+	ofs.precision(10);
+	for (int i : nTest) {
+		llt.setN(i);
+		ofs << "N=" << i << std::endl;
+		ofs << "y,";
+		for (float j : llt.getYt()) {
+			ofs << j << ",";
+		}
+		ofs << std::endl;
+		ofs << "c,";
+		for (float j : llt.getCt()) {
+			ofs << j << ",";
+		}
+		ofs << std::endl;
+	}*/
 	
 	return 0;
 }
