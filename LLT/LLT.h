@@ -77,6 +77,16 @@ public:
 	// optional accessor to the inverted matrix (already inline)
 	const vector<vector<float>>& getIcInverse() const { return Ic_inv; }
 
+	// getters for computed members
+	float getS() const { return S; }
+	const vector<float>& getThetaN() const { return theta_n; }
+	const vector<float>& getYt() const { return y_t; }
+	const vector<float>& getCt() const { return c_t; }
+	const vector<float>& getA0t() const { return a0_t; }
+	const vector<float>& getAlfa0t() const { return alfa0_t; }
+	const vector<float>& getTwistT() const { return twist_t; }
+	const vector<vector<float>>& getIc() const { return Ic; }
+
 	// setters (inline) — retrigger calculations after change
 	void setN(int value) { N = value; computeAll(); }
 	void setB(float value) { b = value; computeAll(); }
