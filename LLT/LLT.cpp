@@ -110,7 +110,7 @@ LLT::LLT(const std::string& filename)
 			return trim(t);
 		};
 
-		// parse numeric fields; convert angle columns (a0, alfa0, twist) from degrees to radians
+		// parse numeric fields; convert angle columns (alfa0, twist) from degrees to radians
 		auto parseFloat = [](const std::string& s, bool degToRad = false) -> float {
 			if (s.empty()) return 0.0f;
 			try {
@@ -132,7 +132,7 @@ LLT::LLT(const std::string& filename)
 
 		y.push_back(parseFloat(s_y, false));
 		c.push_back(parseFloat(s_c, false));
-		// Convert a0, alfa0 and twist from degrees to radians before storing
+		// Convert alfa0 and twist from degrees to radians before storing
 		a0.push_back(parseFloat(s_a0, false));
 		alfa0.push_back(parseFloat(s_alfa0, true));
 		twist.push_back(parseFloat(s_twist, true));
@@ -204,7 +204,7 @@ void LLT::computeAll()
 			c_t[i] = interp(c, i);
 		}
 		else {
-			c_t[i] = b * b * sqrt(1 - std::cos(theta_n[i])) / (aRatio * 2);//have y_t, can use distribution eqn instead of this garbage
+			c_t[i] = 4 * b * sqrt(1 - std::pow((2* y_t[i] / b), 2)) / (aRatio * M_PI);//have y_t, can use distribution eqn instead of this garbage
 		}
 		a0_t[i] = interp(a0, i);
 		alfa0_t[i] = interp(alfa0, i);
@@ -279,15 +279,15 @@ vector<float> LLT::results(float alphaIn)
 
 	// build RHS: rhs[i] = alphaIn + twist_t[i] - alfa0_t[i]
 	vector<float> rhs(N, 0.0f);
-	for (int i = 0; i < N; ++i) {
+	for (int i = 0; i < N; i++) {
 		rhs[i] = alphaIn + twist_t[i] - alfa0_t[i];
 	}
 
 	// multiply A = Ic_inv * rhs
 	vector<float> A(N, 0.0f);
-	for (int i = 0; i < N; ++i) {
+	for (int i = 0; i < N; i++) {
 		float sum = 0.0f;
-		for (int j = 0; j < N; ++j) {
+		for (int j = 0; j < N; j++) {
 			sum += Ic_inv[i][j] * rhs[j];
 		}
 		A[i] = sum;
@@ -391,6 +391,7 @@ std::string LLT::to_str() const
     oss << "elip: " << (elip ? "true" : "false") << "\n";
     oss << "station: " << station << "\n";
     oss << "aRatio: " << aRatio << "\n";
+	oss << "S: " << S << "\n";
 
     auto appendVec = [&](const std::string& name, const std::vector<float>& v) {
         oss << name << ": [";
@@ -479,6 +480,7 @@ bool LLT::to_file(const std::string& filename) const
 	ofs << "elip," << (elip ? 1 : 0) << "\n";
 	ofs << "station," << station << "\n";
 	ofs << "aRatio," << aRatio << "\n";
+	ofs << "S," << S << "\n";
 
 	auto writeVec = [&](const std::string& name, const std::vector<float>& v) {
 		ofs << name;
