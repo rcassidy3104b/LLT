@@ -2,7 +2,7 @@ b,,,,,,,,b,,,,
 N,,,,,,,,N,,,,
 Ellip False,,,,,,,,Ellip True,,,,
 Num y,,,,,,,,Num y,,,,
-y1,c1,a0,alfa0L_1,twist,,,,AR,,,,
+y1,c1,a0 (per rad),alfa0L (deg),twist (deg),,,,AR,,,,
 y2,,,,,,,,y1,c1,a0,alfa0L_1,twist
 y3,,,,,,,,y2,,,,
 y4,,,,,,,,y3,,,,
