@@ -259,6 +259,17 @@ void LLT::computeAll()
 		}
 	}
 
+	// compute ClMax at each y location from chord_y using linear relation
+	// ClMax = m * chord_y + b where ClMax=1.6 at chord_y=2 and ClMax=1.4 at chord_y=0.5
+	// slope m = (1.6 - 1.4) / (2 - 0.5) = 0.1333333333, intercept = 1.3333333333
+	ClMax.assign(N, 0.0f);
+	const float m_cl = 0.1333333333333333f;
+	const float b_cl = 1.3333333333333333f;
+	for (int i = 0; i < N; ++i) {
+		ClMax[i] = m_cl * chord_y[i] + b_cl;
+	}
+
+
 	// compute wing area S from provided y and c (trapezoidal rule).
 	S = 0.0f;
 	if (!elip) {
@@ -463,6 +474,7 @@ std::string LLT::to_str() const
     appendVec("twist_t", twist_t);
     appendVec("y_locations", y_locations);
     appendVec("chord lengths", chord_y);
+	appendVec("ClMax", ClMax);
     
     
 
@@ -558,6 +570,7 @@ bool LLT::to_file(const std::string& filename) const
 
 	writeVec("y_locations", y_locations);
 	writeVec("chord_y", chord_y);
+	writeVec("ClMax", ClMax);
 	// For Ic print each row on its own line prefixed with "Ic"
 	for (size_t i = 0; i < Ic.size(); ++i) {
 		ofs << "Ic";

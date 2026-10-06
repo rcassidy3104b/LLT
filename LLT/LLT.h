@@ -27,11 +27,11 @@ private:
 	vector<float> alfa0_t;
 	vector<float> twist_t;
 
-	// new: uniformly spaced y locations across the span [-b/2, b/2]
-	vector<float> y_locations;
+	vector<float> y_locations;//uniformly spaced y locations across the span [-b/2, b/2]
+	vector<float> chord_y;//chord values corresponding to y_locations (interpolated from c_t at y_t)
 
-	// new: chord values corresponding to y_locations (interpolated from c_t at y_t)
-	vector<float> chord_y;
+	// new: maximum sectional lift coefficient at each y location
+	vector<float> ClMax;
 
 	vector<vector<float>> Ic;
 	// new member to hold the inverse of Ic
@@ -88,6 +88,9 @@ public:
 
 	// accessor for the chord values at y_locations
 	const vector<float>& getCLocations() const { return chord_y; }
+
+	// accessor for the ClMax vector
+	const vector<float>& getClMax() const { return ClMax; }
 
 	// optional accessor to the inverted matrix (already inline)
 	const vector<vector<float>>& getIcInverse() const { return Ic_inv; }
