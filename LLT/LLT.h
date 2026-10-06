@@ -62,6 +62,9 @@ public:
 	vector<float> results(float alphaIn);
 	vector<float> coefs(float alphaIn);
 
+	// returns local Cl distribution at the uniformly spaced y_locations for a given alpha (degrees)
+	vector<float> localCl(float alphaDeg);
+
 	// new: compute and store inverse of Ic
 	// returns true on success, false on failure (e.g. singular matrix)
 	bool invertIc();

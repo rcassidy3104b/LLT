@@ -551,13 +551,13 @@ bool LLT::to_file(const std::string& filename) const
 
 	writeVec("theta_n", theta_n);
 	writeVec("y_t", y_t);
-	writeVec("y_locations", y_locations);
-	writeVec("c_locations", c_locations);
 	writeVec("c_t", c_t);
 	writeVec("a0_t", a0_t);
 	writeVec("alfa0_t", alfa0_t);
 	writeVec("twist_t", twist_t);
 
+	writeVec("y_locations", y_locations);
+	writeVec("chord_y", chord_y);
 	// For Ic print each row on its own line prefixed with "Ic"
 	for (size_t i = 0; i < Ic.size(); ++i) {
 		ofs << "Ic";
@@ -577,4 +577,52 @@ bool LLT::to_file(const std::string& filename) const
 	}
 	
 	return true;
+}
+
+vector<float> LLT::localCl(float alphaDeg)
+{
+	// return empty if not set up
+	if (N <= 0 || b == 0.0f) return vector<float>();
+
+	// obtain Fourier amplitudes A for requested alpha (degrees)
+	vector<float> A = results(alphaDeg);
+	if (A.size() != static_cast<size_t>(N)) return vector<float>();
+
+	// require y_locations; use its size for output
+	size_t M = y_locations.size();
+	if (M == 0) return vector<float>();
+
+	vector<float> out(M, 0.0f);
+	const float EPS = 1e-8f;
+
+	for (size_t i = 0; i < M; ++i) {
+		// compute phi = arccos( -2*y / b ) with clamping
+		float arg = 0.0f;
+		if (b != 0.0f) arg = -2.0f * y_locations[i] / b;
+		if (arg < -1.0f) arg = -1.0f;
+		if (arg > 1.0f)  arg = 1.0f;
+		float phi = acos(arg);
+
+		// sum A[n] * sin((n+1)*phi)
+		float sum = 0.0f;
+		for (int n = 0; n < N; ++n) {
+			sum += A[n] * sin((n + 1) * phi);
+		}
+
+		// choose chord at this location (prefer c_locations, fallback to c_t if available)
+		float chord = 0.0f;
+		if (i < chord_y.size()) {
+			chord = chord_y[i];
+		} else if (i < c_t.size()) {
+			chord = c_t[i];
+		}
+
+		if (chord > EPS) {
+			out[i] = (8.0f * b / chord) * sum;
+		} else {
+			out[i] = 0.0f;
+		}
+	}
+
+	return out;
 }
