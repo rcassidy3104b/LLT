@@ -28,6 +28,7 @@ LLT::LLT()
 	: N(0), b(0.0f), elip(false), station(0),
 	  y(), c(), a0(), alfa0(), twist(),
 	  theta_n(), y_t(), c_t(), a0_t(), alfa0_t(), twist_t(),
+	  y_locations(),
 	  Ic(), Ic_inv(), aRatio(0.0f), S(0.0f)
 {
 	// nothing to compute
@@ -43,6 +44,7 @@ LLT::LLT(int N_, float b_, bool elip_, int station_,
 	: N(N_), b(b_), elip(elip_), station(station_),
 	  y(y_), c(c_), a0(a0_), alfa0(alfa0_), twist(twist_),
 	  theta_n(), y_t(), c_t(), a0_t(), alfa0_t(), twist_t(),
+	  y_locations(),
 	  Ic(), Ic_inv(), aRatio(0.0f), S(0.0f)
 {
 	computeAll();
@@ -53,6 +55,7 @@ LLT::LLT(const std::string& filename)
 	: N(0), b(0.0f), elip(false), station(0),
 	  y(), c(), a0(), alfa0(), twist(),
 	  theta_n(), y_t(), c_t(), a0_t(), alfa0_t(), twist_t(),
+	  y_locations(),
 	  Ic(), Ic_inv(), aRatio(0.0f),S(0.0f)
 {
 	std::ifstream inFile(filename);
@@ -152,6 +155,7 @@ void LLT::computeAll()
 	a0_t.clear();
 	alfa0_t.clear();
 	twist_t.clear();
+	y_locations.clear();
 	Ic.clear();
 	Ic_inv.clear();
 	if (!elip) {
@@ -159,6 +163,19 @@ void LLT::computeAll()
 	}
 	// basic checks
 	if (N <= 0 || b == 0.0f) return;
+
+	// compute uniform y_locations evenly spaced from -b/2 to b/2
+	y_locations.reserve(N);
+	if (N == 1) {
+		// single point at center
+		y_locations.push_back(0.0f);
+	} else {
+		float start = -b / 2.0f;
+		float step = b / static_cast<float>(N - 1);
+		for (int i = 0; i < N; ++i) {
+			y_locations.push_back(start + i * step);
+		}
+	}
 
 	// compute theta_n and y_t
 	theta_n.reserve(N);
@@ -410,6 +427,7 @@ std::string LLT::to_str() const
 
     appendVec("theta_n", theta_n);
     appendVec("y_t", y_t);
+    appendVec("y_locations", y_locations);
     appendVec("c_t", c_t);
     appendVec("a0_t", a0_t);
     appendVec("alfa0_t", alfa0_t);
@@ -461,6 +479,7 @@ std::string LLT::to_str() const
 //   twist,<...>
 //   theta_n,<...>
 //   y_t,<...>
+//   y_locations,<...>
 //   c_t,<...>
 //   a0_t,<...>
 //   alfa0_t,<...>
@@ -498,6 +517,7 @@ bool LLT::to_file(const std::string& filename) const
 
 	writeVec("theta_n", theta_n);
 	writeVec("y_t", y_t);
+	writeVec("y_locations", y_locations);
 	writeVec("c_t", c_t);
 	writeVec("a0_t", a0_t);
 	writeVec("alfa0_t", alfa0_t);

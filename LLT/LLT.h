@@ -27,6 +27,9 @@ private:
 	vector<float> alfa0_t;
 	vector<float> twist_t;
 
+	// new: uniformly spaced y locations across the span [-b/2, b/2]
+	vector<float> y_locations;
+
 	vector<vector<float>> Ic;
 	// new member to hold the inverse of Ic
 	vector<vector<float>> Ic_inv;
@@ -74,6 +77,9 @@ public:
 	// accessor to aRatio
 	float getARatio() const { return aRatio; }
 
+	// accessor for the new uniform y locations
+	const vector<float>& getYLocations() const { return y_locations; }
+
 	// optional accessor to the inverted matrix (already inline)
 	const vector<vector<float>>& getIcInverse() const { return Ic_inv; }
 
@@ -87,7 +93,7 @@ public:
 	const vector<float>& getTwistT() const { return twist_t; }
 	const vector<vector<float>>& getIc() const { return Ic; }
 
-	// setters (inline) — retrigger calculations after change
+	// setters (inline)  retrigger calculations after change
 	void setN(int value) { N = value; computeAll(); }
 	void setB(float value) { b = value; computeAll(); }
 	void setElip(bool value) { elip = value; computeAll(); }
