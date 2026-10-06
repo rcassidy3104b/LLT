@@ -62,6 +62,10 @@ public:
 	vector<float> results(float alphaIn);
 	vector<float> coefs(float alphaIn);
 
+	// find alpha (degrees) that gives the requested overall CL using a bracketing + bisection
+	// returns NaN if solution cannot be found
+	float alphaForCL(float CLtarget, float alphaLow = -20.0f, float alphaHigh = 20.0f, float tol = 1e-4f, int maxIter = 100) const;
+
 	// returns local Cl distribution at the uniformly spaced y_locations for a given alpha (degrees)
 	vector<float> localCl(float alphaDeg);
 

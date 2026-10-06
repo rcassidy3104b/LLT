@@ -3,6 +3,7 @@
 #include <iomanip>
 #include <fstream>
 #include <algorithm>
+#include <limits>
 
 namespace {
 	// small helpers copied/adapted from previous main.cpp
@@ -367,6 +368,74 @@ vector<float> LLT::coefs(float alphaIn)
 	res.push_back(res[0] * res[0] * (1 + res[1]) / (M_PI * aRatio));
 	res.push_back(A[1] * b * b * M_PI / (4 * S));
 	return res;
+}
+
+// Find alpha (degrees) that produces CL = CLtarget using bracketing + bisection.
+// Returns NaN if a solution cannot be found.
+float LLT::alphaForCL(float CLtarget, float alphaLow, float alphaHigh, float tol, int maxIter) const
+{
+	auto eval = [&](float alpha, float &out) -> bool {
+		// coefs is non-const; cast away const to call it (coefs does not modify object state)
+		LLT *self = const_cast<LLT*>(this);
+		vector<float> r = self->coefs(alpha);
+		if (r.empty()) return false;
+		out = r[0] - CLtarget;
+		return true;
+	};
+
+	const float NANF = std::numeric_limits<float>::quiet_NaN();
+
+	float fLo, fHi;
+	if (!eval(alphaLow, fLo) || !eval(alphaHigh, fHi)) return NANF;
+
+	// trivial exact matches
+	if (std::fabs(fLo) <= tol) return alphaLow;
+	if (std::fabs(fHi) <= tol) return alphaHigh;
+
+	// if bracket does not contain a root, attempt to find one by sampling
+	if (fLo * fHi > 0.0f) {
+		bool bracketFound = false;
+		float step = 1.0f;
+		for (float a = -45.0f; a <= 45.0f; a += step) {
+			float fa;
+			if (!eval(a, fa)) continue;
+			// find adjacent sample
+			float b = a + step;
+			float fb;
+			if (!eval(b, fb)) continue;
+			if (fa * fb <= 0.0f) {
+				alphaLow = a;
+				alphaHigh = b;
+				fLo = fa;
+				fHi = fb;
+				bracketFound = true;
+				break;
+			}
+		}
+		if (!bracketFound) return NANF;
+	}
+
+	// bisection
+	float lo = alphaLow;
+	float hi = alphaHigh;
+	float flo = fLo;
+	float fhi = fHi;
+	for (int iter = 0; iter < maxIter; ++iter) {
+		float mid = 0.5f * (lo + hi);
+		float fmid;
+		if (!eval(mid, fmid)) return NANF;
+		if (std::fabs(fmid) <= tol) return mid;
+		if (flo * fmid <= 0.0f) {
+			hi = mid;
+			fhi = fmid;
+		} else {
+			lo = mid;
+			flo = fmid;
+		}
+		if (std::fabs(hi - lo) <= tol) return 0.5f * (hi + lo);
+	}
+
+	return 0.5f * (lo + hi);
 }
 
 bool LLT::invertIc()
