@@ -30,6 +30,9 @@ private:
 	// new: uniformly spaced y locations across the span [-b/2, b/2]
 	vector<float> y_locations;
 
+	// new: chord values corresponding to y_locations (interpolated from c_t at y_t)
+	vector<float> chord_y;
+
 	vector<vector<float>> Ic;
 	// new member to hold the inverse of Ic
 	vector<vector<float>> Ic_inv;
@@ -80,6 +83,9 @@ public:
 	// accessor for the new uniform y locations
 	const vector<float>& getYLocations() const { return y_locations; }
 
+	// accessor for the chord values at y_locations
+	const vector<float>& getCLocations() const { return chord_y; }
+
 	// optional accessor to the inverted matrix (already inline)
 	const vector<vector<float>>& getIcInverse() const { return Ic_inv; }
 
@@ -93,7 +99,7 @@ public:
 	const vector<float>& getTwistT() const { return twist_t; }
 	const vector<vector<float>>& getIc() const { return Ic; }
 
-	// setters (inline)  retrigger calculations after change
+	// setters (inline) retrigger calculations after change
 	void setN(int value) { N = value; computeAll(); }
 	void setB(float value) { b = value; computeAll(); }
 	void setElip(bool value) { elip = value; computeAll(); }

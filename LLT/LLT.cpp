@@ -28,7 +28,7 @@ LLT::LLT()
 	: N(0), b(0.0f), elip(false), station(0),
 	  y(), c(), a0(), alfa0(), twist(),
 	  theta_n(), y_t(), c_t(), a0_t(), alfa0_t(), twist_t(),
-	  y_locations(),
+	  y_locations(), chord_y(),
 	  Ic(), Ic_inv(), aRatio(0.0f), S(0.0f)
 {
 	// nothing to compute
@@ -44,7 +44,7 @@ LLT::LLT(int N_, float b_, bool elip_, int station_,
 	: N(N_), b(b_), elip(elip_), station(station_),
 	  y(y_), c(c_), a0(a0_), alfa0(alfa0_), twist(twist_),
 	  theta_n(), y_t(), c_t(), a0_t(), alfa0_t(), twist_t(),
-	  y_locations(),
+	  y_locations(), chord_y(),
 	  Ic(), Ic_inv(), aRatio(0.0f), S(0.0f)
 {
 	computeAll();
@@ -55,7 +55,7 @@ LLT::LLT(const std::string& filename)
 	: N(0), b(0.0f), elip(false), station(0),
 	  y(), c(), a0(), alfa0(), twist(),
 	  theta_n(), y_t(), c_t(), a0_t(), alfa0_t(), twist_t(),
-	  y_locations(),
+	  y_locations(), chord_y(),
 	  Ic(), Ic_inv(), aRatio(0.0f),S(0.0f)
 {
 	std::ifstream inFile(filename);
@@ -156,6 +156,7 @@ void LLT::computeAll()
 	alfa0_t.clear();
 	twist_t.clear();
 	y_locations.clear();
+	chord_y.clear();
 	Ic.clear();
 	Ic_inv.clear();
 	if (!elip) {
@@ -194,7 +195,7 @@ void LLT::computeAll()
 	// if no input station data, leave interpolated vectors as zeros and do not build Ic
 	if (y.empty()) return;
 
-	// helper lambda for linear interpolation given input arrays
+	// helper lambda for linear interpolation given input arrays (src defined at y input array 'y')
 	auto interp = [&](const vector<float>& src, int idx) -> float {
 		// if only one input value, return it
 		if (src.size() == 1 || y.size() == 1) return src[0];
@@ -228,6 +229,35 @@ void LLT::computeAll()
 		twist_t[i] = interp(twist, i);
 	}
 
+	// compute chord values at y_locations by interpolating c_t defined at y_t
+	chord_y.assign(N, 0.0f);
+	if (c_t.size() == 1 || y_t.size() == 1) {
+		// single value case
+		for (int i = 0; i < N; ++i) chord_y[i] = c_t.empty() ? 0.0f : c_t[0];
+	} else {
+		// y_t is monotonic increasing; perform linear interpolation with clamping at ends
+		for (int i = 0; i < N; ++i) {
+			float yl = y_locations[i];
+			if (yl <= y_t.front()) {
+				chord_y[i] = c_t.front();
+				continue;
+			}
+			if (yl >= y_t.back()) {
+				chord_y[i] = c_t.back();
+				continue;
+			}
+			// find interval in y_t
+			for (size_t j = 0; j + 1 < y_t.size(); ++j) {
+				float y0 = y_t[j];
+				float y1 = y_t[j + 1];
+				if (yl >= y0 && yl <= y1) {
+					float t = (yl - y0) / (y1 - y0);
+					chord_y[i] = c_t[j] + t * (c_t[j + 1] - c_t[j]);
+					break;
+				}
+			}
+		}
+	}
 
 	// compute wing area S from provided y and c (trapezoidal rule).
 	S = 0.0f;
@@ -427,11 +457,14 @@ std::string LLT::to_str() const
 
     appendVec("theta_n", theta_n);
     appendVec("y_t", y_t);
-    appendVec("y_locations", y_locations);
-    appendVec("c_t", c_t);
-    appendVec("a0_t", a0_t);
+	appendVec("c_t", c_t);
+	appendVec("a0_t", a0_t);
     appendVec("alfa0_t", alfa0_t);
     appendVec("twist_t", twist_t);
+    appendVec("y_locations", y_locations);
+    appendVec("chord lengths", chord_y);
+    
+    
 
     oss << "Ic: [";
     for (size_t i = 0; i < Ic.size(); ++i) {
@@ -480,6 +513,7 @@ std::string LLT::to_str() const
 //   theta_n,<...>
 //   y_t,<...>
 //   y_locations,<...>
+//   c_locations,<...>
 //   c_t,<...>
 //   a0_t,<...>
 //   alfa0_t,<...>
@@ -518,6 +552,7 @@ bool LLT::to_file(const std::string& filename) const
 	writeVec("theta_n", theta_n);
 	writeVec("y_t", y_t);
 	writeVec("y_locations", y_locations);
+	writeVec("c_locations", c_locations);
 	writeVec("c_t", c_t);
 	writeVec("a0_t", a0_t);
 	writeVec("alfa0_t", alfa0_t);
