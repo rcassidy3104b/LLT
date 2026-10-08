@@ -31,13 +31,13 @@ int main()
 	LLT llt(filename);
 
 	std::cout << "LLT object created: N=" << llt.getN()
-	          << " b=" << llt.getB()
-	          << " elip=" << llt.isElip()
-	          << " station=" << llt.getStation() << '\n';
+		<< " b=" << llt.getB()
+		<< " elip=" << llt.isElip()
+		<< " station=" << llt.getStation() << '\n';
 
 	std::cout << llt.to_str() << std::endl;
 
-	// write object summary to out.csv (existing behavior)
+	// write object summary to out.csv
 	if (!llt.to_file("out.csv")) {
 		std::cerr << "Failed to write out.csv\n";
 	}
@@ -60,7 +60,6 @@ int main()
 		std::cerr << "No non-empty lines found in input file to parse alphas\n";
 		return 1;
 	}
-
 	// parse CSV fields from lastNonEmpty
 	std::vector<std::string> fields;
 	{
@@ -70,7 +69,6 @@ int main()
 			fields.push_back(trim(tok));
 		}
 	}
-
 	if (fields.size() < 3) {
 		std::cerr << "Expected alphas in 'start,step,stop' format on last line; found: " << lastNonEmpty << '\n';
 		return 1;
@@ -79,9 +77,10 @@ int main()
 	double startDeg = 0.0, stepDeg = 0.0, stopDeg = 0.0;
 	try {
 		startDeg = std::stod(fields[0]);
-		stepDeg  = std::stod(fields[1]);
-		stopDeg  = std::stod(fields[2]);
-	} catch (...) {
+		stepDeg = std::stod(fields[1]);
+		stopDeg = std::stod(fields[2]);
+	}
+	catch (...) {
 		std::cerr << "Failed to parse start/step/stop from: " << lastNonEmpty << '\n';
 		return 1;
 	}
@@ -104,18 +103,11 @@ int main()
 
 	// Iterate alphas and write both results (A) and coefs for each alpha.
 	float alphaDeg = startDeg;
-	
+
 	while (alphaDeg <= stopDeg + 1e-12) {
-		float alphaRad = alphaDeg * M_PI / 180.0;
-		// coefs historically expected degrees in the original code; call with degrees
 		std::vector<float> C;
 		// guard: only call if method exists; assuming it does in this project
-		try {
-			C = llt.coefs(alphaDeg);
-		} catch (...) {
-			// if coefs not available or throws, leave C empty
-			C.clear();
-		}
+		C = llt.coefs(alphaDeg);
 		ofs << alphaDeg;
 		for (float v : C) ofs << "," << v;
 		ofs << "\n";
@@ -124,6 +116,46 @@ int main()
 	//ofs << llt.alphaForCL(1.0) << std::endl;
 
 	ofs.close();
-	
+	//HW2 Question 1
+	vector<string> fileNames = { "Wing1.csv", "Wing2.csv", "Wing3.csv", "Wing4.csv" };
+	std::ofstream clq("HW2_1.csv");
+	for (string name : fileNames) {
+		LLT lltq(name);
+		int numMatch = 0;
+		float aUp = 20.0;
+		float aLow = 0.0;
+		float aMid;
+		vector<float> clDist;
+		vector<float> clMax = lltq.getClMax();
+		while (numMatch < 1 || numMatch>2) {
+			numMatch = 0;
+			aMid = (aUp + aLow) / 2.0;
+			clDist = lltq.localCl(aMid);
+			for (int i = 0; i < clDist.size(); i++) {
+				if (clDist[i] >= clMax[i]) {
+					numMatch++;
+				}
+			}
+			if (numMatch < 1) {
+				aLow = aMid;
+			}
+			else if (numMatch > 2) {
+				aUp = aMid;
+			}
+		}
+
+		clq << name << "," << aMid << std::endl;
+		for (int i = 0; i < clDist.size(); i++) {
+			clq << clDist[i] << ",";
+		}
+		clq << std::endl;
+		for (int i = 0; i < clMax.size(); i++) {
+			clq << clMax[i] << ",";
+		}
+		clq << std::endl;
+	}
+	clq.close();
+
+
 	return 0;
 }
