@@ -117,33 +117,11 @@ int main()
 
 	ofs.close();
 	//HW2 Question 1
-	vector<string> fileNames = { "Wing1.csv", "Wing2.csv", "Wing3.csv", "Wing4.csv" };
+	/*vector<string> fileNames = { "Wing1.csv", "Wing2.csv", "Wing3.csv", "Wing4.csv" };
 	std::ofstream clq("HW2_1.csv");
 	for (string name : fileNames) {
 		LLT lltq(name);
-		int numMatch = 0;
-		float aUp = 20.0;
-		float aLow = 0.0;
-		float aMid;
-		vector<float> clDist;
-		vector<float> clMax = lltq.getClMax();
-		while (numMatch < 1 || numMatch>2) {
-			numMatch = 0;
-			aMid = (aUp + aLow) / 2.0;
-			clDist = lltq.localCl(aMid);
-			for (int i = 0; i < clDist.size(); i++) {
-				if (clDist[i] >= clMax[i]) {
-					numMatch++;
-				}
-			}
-			if (numMatch < 1) {
-				aLow = aMid;
-			}
-			else if (numMatch > 2) {
-				aUp = aMid;
-			}
-		}
-
+		aMid = lltq.stallOnsetAoA();
 		clq << name << "," << aMid << std::endl;
 		for (int i = 0; i < clDist.size(); i++) {
 			clq << clDist[i] << ",";
@@ -154,8 +132,45 @@ int main()
 		}
 		clq << std::endl;
 	}
-	clq.close();
+	clq.close();*/
 
-
+	//HW2 Question 2
+	std::ofstream clq("HW2_2.csv");
+	LLT llta("Wing2.csv");
+	//vector<float> twist = { -3.0, 0.0, -5.0 };
+	//llta.setTwist(twist);
+	int numMatch = 0;
+	float tUp = 0.0;
+	float tLow = -20.0;
+	float tMid;
+	float a;
+	vector<float> clDist;
+	vector<float> clMax = llta.getClMax();
+	float dif = 1.0;
+	while (abs(dif) > 0.001) {
+		tMid = (tUp + tLow) / 2.0;
+		vector<float> twist = { tMid, 0.0, tMid};
+		llta.setTwist(twist);
+		a = llta.stallOnsetAoA();
+		clDist = llta.localCl(a);
+		dif = clMax[static_cast <int>(0.35 * llta.getN())] - clDist[static_cast <int>(0.35 * llta.getN())] - 0.1;
+		if(dif>0.001){
+			tLow = tMid;
+		}
+		else if(dif<-0.001){
+			tUp = tMid;
+		}
+		else{
+			break;
+		}
+	}
+	clq << tMid << "," << a << std::endl;
+	for (int i = 0; i < clDist.size(); i++) {
+		clq << clDist[i] << ",";
+	}
+	clq << std::endl;
+	for (int i = 0; i < clMax.size(); i++) {
+		clq << clMax[i] << ",";
+	}
 	return 0;
 }

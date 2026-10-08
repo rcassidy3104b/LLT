@@ -114,7 +114,7 @@ LLT::LLT(const std::string& filename)
 			return trim(t);
 		};
 
-		// parse numeric fields; convert angle columns (alfa0, twist) from degrees to radians
+		// parse numeric fields; convert angle columns (alfa0L, twist) from degrees to radians
 		auto parseFloat = [](const std::string& s, bool degToRad = false) -> float {
 			if (s.empty()) return 0.0f;
 			try {
@@ -321,17 +321,12 @@ void LLT::computeAll()
 }
 
 // Compute A = Ic_inv * (alphaIn + twist_t - alfa0_t)
-vector<float> LLT::results(float alphaIn)
+vector<float> LLT::results(float alphaIn) const
 {
 	alphaIn = alphaIn * static_cast<float>(M_PI) / 180.0f;
 	// ensure sizes are valid
 	if (static_cast<int>(twist_t.size()) != N || static_cast<int>(alfa0_t.size()) != N) {
 		return vector<float>(); // invalid state
-	}
-
-	// ensure inverse is present (attempt to compute if not)
-	if (Ic_inv.empty()) {
-		if (!invertIc()) return vector<float>(); // singular or invalid
 	}
 
 	if (static_cast<int>(Ic_inv.size()) != N) return vector<float>();
@@ -509,6 +504,33 @@ bool LLT::invertIc()
 	return true;
 }
 
+float LLT::stallOnsetAoA() const
+{
+	int numMatch = 0;
+	float aUp = 30.0;
+	float aLow = 0.0;
+	float aMid;
+	vector<float> clDist;
+	vector<float> clMax = getClMax();
+	while (numMatch < 1 || numMatch>2) {
+		numMatch = 0;
+		aMid = (aUp + aLow) / 2.0;
+		clDist = localCl(aMid);
+		for (int i = 0; i < clDist.size(); i++) {
+			if (clDist[i] >= clMax[i]) {
+				numMatch++;
+			}
+		}
+		if (numMatch < 1) {
+			aLow = aMid;
+		}
+		else if (numMatch > 2) {
+			aUp = aMid;
+		}
+	}
+	return aMid;
+}
+
 std::string LLT::to_str() const
 {
     std::ostringstream oss;
@@ -661,7 +683,7 @@ bool LLT::to_file(const std::string& filename) const
 	return true;
 }
 
-vector<float> LLT::localCl(float alphaDeg)
+vector<float> LLT::localCl(float alphaDeg) const
 {
 	// return empty if not set up
 	if (N <= 0 || b == 0.0f) return vector<float>();

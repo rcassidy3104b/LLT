@@ -59,7 +59,7 @@ public:
 	LLT(const std::string& filename);
 
 	// results now accepts a float alphaIn and returns vector A
-	vector<float> results(float alphaIn);
+	vector<float> results(float alphaIn) const;
 	vector<float> coefs(float alphaIn);
 
 	// find alpha (degrees) that gives the requested overall CL using a bracketing + bisection
@@ -67,7 +67,7 @@ public:
 	float alphaForCL(float CLtarget, float alphaLow = -20.0f, float alphaHigh = 20.0f, float tol = 1e-4f, int maxIter = 100) const;
 
 	// returns local Cl distribution at the uniformly spaced y_locations for a given alpha (degrees)
-	vector<float> localCl(float alphaDeg);
+	vector<float> localCl(float alphaDeg) const;
 
 	// new: compute and store inverse of Ic
 	// returns true on success, false on failure (e.g. singular matrix)
@@ -96,6 +96,8 @@ public:
 	// accessor for the ClMax vector
 	const vector<float>& getClMax() const { return ClMax; }
 
+	float stallOnsetAoA() const; // returns the angle of attack (degrees) at which stall onset occurs
+
 	// optional accessor to the inverted matrix (already inline)
 	const vector<vector<float>>& getIcInverse() const { return Ic_inv; }
 
@@ -117,8 +119,15 @@ public:
 	void setY(const vector<float>& value) { y = value; computeAll(); }
 	void setC(const vector<float>& value) { c = value; computeAll(); }
 	void setA0(const vector<float>& value) { a0 = value; computeAll(); }
-	void setAlfa0(const vector<float>& value) { alfa0 = value; computeAll(); }
-	void setTwist(const vector<float>& value) { twist = value; computeAll(); }
+	void setAlfa0(const vector<float>& value) { alfa0 = value; computeAll(); }	
+	void setTwist(const vector<float>& value) { 
+	vector<float> temp = value;
+	for (auto& val : temp) {
+		val *= (M_PI) / 180.0f;
+	}
+	twist = temp; 
+	computeAll(); 
+	}
 
 	std::string to_str() const;
 
