@@ -83,15 +83,9 @@ public:
 	const vector<float>& getA0() const { return a0; }
 	const vector<float>& getAlfa0() const { return alfa0; }
 	const vector<float>& getTwist() const { return twist; }
-
-	// accessor to aRatio
 	float getARatio() const { return aRatio; }
-
-	// accessor for the new uniform y locations
 	const vector<float>& getYLocations() const { return y_locations; }
-
-	// accessor for the chord values at y_locations
-	const vector<float>& getCLocations() const { return chord_y; }
+	const vector<float>& getChordY() const { return chord_y; }
 
 	// accessor for the ClMax vector
 	const vector<float>& getClMax() const { return ClMax; }

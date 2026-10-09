@@ -714,15 +714,9 @@ vector<float> LLT::localCl(float alphaDeg) const
 		}
 
 		// choose chord at this location (prefer c_locations, fallback to c_t if available)
-		float chord = 0.0f;
-		if (i < chord_y.size()) {
-			chord = chord_y[i];
-		} else if (i < c_t.size()) {
-			chord = c_t[i];
-		}
-
+		float chord  = chord_y[i];
 		if (chord > EPS) {
-			out[i] = (8.0f * b / chord) * sum;
+			out[i] = (4.0f * b / chord) * sum;
 		} else {
 			out[i] = 0.0f;
 		}

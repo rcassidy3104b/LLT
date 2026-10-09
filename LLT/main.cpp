@@ -121,8 +121,10 @@ int main()
 	std::ofstream clq("HW2_1.csv");
 	for (string name : fileNames) {
 		LLT lltq(name);
-		aMid = lltq.stallOnsetAoA();
-		clq << name << "," << aMid << std::endl;
+		float aMid = lltq.stallOnsetAoA();
+		vector<float> clDist = lltq.localCl(aMid);
+		vector<float> clMax = lltq.getClMax();
+		clq << name << "," << aMid <<"," << lltq.coefs(aMid)[0] <<std::endl;
 		for (int i = 0; i < clDist.size(); i++) {
 			clq << clDist[i] << ",";
 		}
@@ -135,10 +137,8 @@ int main()
 	clq.close();*/
 
 	//HW2 Question 2
-	std::ofstream clq("HW2_2.csv");
+	/*std::ofstream clq("HW2_2.csv");
 	LLT llta("Wing2.csv");
-	//vector<float> twist = { -3.0, 0.0, -5.0 };
-	//llta.setTwist(twist);
 	int numMatch = 0;
 	float tUp = 0.0;
 	float tLow = -20.0;
@@ -153,7 +153,7 @@ int main()
 		llta.setTwist(twist);
 		a = llta.stallOnsetAoA();
 		clDist = llta.localCl(a);
-		dif = clMax[static_cast <int>(0.35 * llta.getN())] - clDist[static_cast <int>(0.35 * llta.getN())] - 0.1;
+		dif = clMax[static_cast <int>(0.85 * llta.getN())] - clDist[static_cast <int>(0.85 * llta.getN())] - 0.1;
 		if(dif>0.001){
 			tLow = tMid;
 		}
@@ -164,13 +164,96 @@ int main()
 			break;
 		}
 	}
-	clq << tMid << "," << a << std::endl;
+	clq << "Twist at end," << tMid << "," << "Stall onset Alpha," << a << ",CL Max,"<< llta.coefs(a)[0] << std::endl;
+	clq << "Cl distribution,";
 	for (int i = 0; i < clDist.size(); i++) {
 		clq << clDist[i] << ",";
 	}
 	clq << std::endl;
+	clq << "Cl Max distribution,";
 	for (int i = 0; i < clMax.size(); i++) {
 		clq << clMax[i] << ",";
 	}
+	clq << std::endl;
+	clq << "chord dist,";
+	for (int i = 0; i < llta.getChordY().size(); i++) {
+		clq << llta.getChordY()[i] << ",";
+	}*/
+
+	//HW2 Question 3
+	//LLT llta("P3.csv");
+	//std::ofstream clq("HW2_3.csv");
+	////basic loading
+	//float alphaZL = llta.alphaForCL(0.0);
+	//vector<float> clDistBasic = llta.localCl(alphaZL);
+
+	//float alpha05 = llta.alphaForCL(0.5);
+	//vector<float> clDist05 = llta.localCl(alpha05);
+	//clq << "Cl for wing at 0.5,";
+	//for (int i = 0; i < clDist05.size(); i++) {
+	//	clq << clDist05[i] << ",";
+	//}
+	//clq << std::endl;
+
+	////Add'l loading
+	//vector<float> zeros = { 0.0, 0.0, 0.0 };
+	//llta.setAlfa0(zeros);
+	//llta.setTwist(zeros);
+	//float alphaADD = llta.alphaForCL(1.0);
+	//vector<float> clDistAdd = llta.localCl(alphaADD);
+
+
+	//
+
+	//clq << "Basic Loading Cl,";
+	//for (int i = 0; i < clDistBasic.size(); i++) {
+	//	clq << clDistBasic[i] << ",";
+	//}
+	//clq << std::endl << "Additional Loading Cl=1,";
+	//for (int i = 0; i < clDistAdd.size(); i++) {
+	//	clq << clDistAdd[i] << ",";
+	//}
+	//clq << std::endl;
+
+	//float alpha5 = llta.alphaForCL(0.5);
+	//vector<float> clDistAdd5 = llta.localCl(alpha5);
+	//clq << "Additional Loading Cl = .5,";
+	//for (int i = 0; i < clDistAdd5.size(); i++) {
+	//	clq << clDistAdd5[i] << ",";
+	//}
+	//clq << std::endl;
+	//clq.close();
+
+	//HW2 Question 4
+	std::ofstream clq("HW2_4.csv");
+	LLT llta("P4a.csv");
+	float alpha = llta.alphaForCL(1.0);
+	vector<float> clDist = llta.localCl(alpha);
+	vector<float> chord = llta.getChordY();
+	clq << "Alpha no deflection,"<<alpha<<endl;
+	clq << "No Deflection Cl,";
+	for (int i = 0; i < clDist.size(); i++) {
+		clq << clDist[i] << ",";
+	}
+	clq << endl << "chord,";
+	for (int i = 0; i < chord.size(); i++) {
+		clq << chord[i] << ",";
+	}
+
+	LLT lltb("P4b.csv");
+	//alpha = lltb.alphaForCL(1.0);
+	clDist = lltb.localCl(alpha);
+	chord = lltb.getChordY();
+	//clq << endl << "Alpha 10 deg deflection," << alpha;
+	clq << endl<< "10 deg Deflection Cl,";
+	for (int i = 0; i < clDist.size(); i++) {
+		clq << clDist[i] << ",";
+	}
+	clq << endl << "y,";
+	for (int i = 0; i < lltb.getYLocations().size(); i++) {
+		clq << lltb.getYLocations()[i] << ",";
+	}
+	clq.close();
+	
 	return 0;
 }
